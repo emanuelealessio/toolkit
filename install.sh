@@ -7,6 +7,7 @@ REPO="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
 SKILLS_DIR="$CLAUDE_HOME/skills"
 AGENTS_DIR="$CLAUDE_HOME/agents"
+HOOKS_DIR="$CLAUDE_HOME/hooks"
 STATE_DIR="$CLAUDE_HOME/state"
 BACKUPS_DIR="$CLAUDE_HOME/backups"
 SETTINGS="$CLAUDE_HOME/settings.json"
@@ -78,6 +79,18 @@ install_agents() {
     local name
     name="$(basename "$f")"
     link_dir "$REPO/agents/$name" "$AGENTS_DIR/$name"
+  done
+}
+
+install_hooks() {
+  # Symlink each hook script individually so existing user hooks coexist.
+  [ -d "$REPO/hooks" ] || return 0
+  mkdir -p "$HOOKS_DIR"
+  for f in "$REPO"/hooks/*.sh; do
+    [ -f "$f" ] || continue
+    local name
+    name="$(basename "$f")"
+    link_dir "$REPO/hooks/$name" "$HOOKS_DIR/$name"
   done
 }
 
@@ -170,6 +183,17 @@ verify() {
       printf "  ${RED}KO${NC}  agent $name\n"; errors=$((errors+1))
     fi
   done
+  for f in "$REPO"/hooks/*.sh; do
+    [ -f "$f" ] || continue
+    local name dst
+    name="$(basename "$f")"
+    dst="$HOOKS_DIR/$name"
+    if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$REPO/hooks/$name" ]; then
+      printf "  ${GREEN}OK${NC}  hook $name\n"
+    else
+      printf "  ${RED}KO${NC}  hook $name\n"; errors=$((errors+1))
+    fi
+  done
   if python3 -c "import json,sys; json.load(open('$SETTINGS'))" 2>/dev/null; then
     printf "  ${GREEN}OK${NC}  settings.json parsabile\n"
   else
@@ -200,6 +224,7 @@ main() {
   backup_once
   install_skills
   install_agents
+  install_hooks
   install_anthropic_skills
   merge_settings
   scaffold_state

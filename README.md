@@ -19,9 +19,10 @@ After install, `git pull` in `~/toolkit` propagates updates instantly — skills
 ## What it gives you
 
 - **12 personal skills** in `~/.claude/skills/` (symlinked from this repo)
-- **3 subagents** in `~/.claude/agents/` (symlinked)
+- **6 subagents** in `~/.claude/agents/` (symlinked)
+- **2 safety hooks** in `~/.claude/hooks/` (warn-only, see below)
 - **Anthropic's official skills** (`anthropics/skills`) auto-cloned to `~/.claude/external/` and symlinked alongside — document handling (PDF, DOCX, XLSX, PPTX), Skill Creator and other reference skills come bundled
-- A merged `~/.claude/settings.json` with read-only git/rg/ls permissions pre-allowed
+- A merged `~/.claude/settings.json` with read-only git/rg/ls permissions pre-allowed and hook entries wired up
 - A scaffolded `~/.claude/state/` for cross-session memory
 
 Existing skills (e.g. `session-start-hook`) and hook entries in `settings.json` are preserved — the installer never overwrites silently. If an anthropic skill name collides with a local one, the local one wins.
@@ -51,6 +52,17 @@ Existing skills (e.g. `session-start-hook`) and hook entries in `settings.json` 
 |---|---|
 | `git-commit` | Stage is ready — drafts conventional-commit message. |
 | `git-pr` | Branch is ready — drafts PR title/body/test-plan (no auto-push). |
+
+## Safety hooks
+
+Two warn-only hooks are wired into `settings.json`:
+
+| Hook | Event | Behavior |
+|---|---|---|
+| `safety-bash-guard.sh` | `PreToolUse` (matcher `Bash`) | Warns when Claude is about to run `git push --force` on protected branches, `git reset --hard`, `rm -rf` on dangerous paths, `--no-verify`, `git branch -D main`, etc. Never blocks — Claude can still proceed. |
+| `precompact-handoff.sh` | `PreCompact` | Writes a minimal `HANDOFF.md` (branch, last commit, uncommitted files) before the context window is compressed. Safety net for forgotten `session-handoff` calls. |
+
+Both are pure shell, no LLM dependency. To replace warn-only with hard blocks, edit `hooks/safety-bash-guard.sh` and change `exit 0` to `exit 2` after the relevant warnings.
 
 ## Bundled external skills
 
@@ -94,7 +106,8 @@ toolkit/
 ├── lib/merge-settings.py
 ├── settings/settings.fragment.json
 ├── skills/<name>/SKILL.md       # one dir per skill (12 total)
-├── agents/<name>.md             # one file per subagent
+├── agents/<name>.md             # one file per subagent (6 total)
+├── hooks/<name>.sh              # warn-only safety hooks
 └── templates/                   # seeds copied by project-bootstrap
 ```
 
