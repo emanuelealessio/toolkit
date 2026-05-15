@@ -1,6 +1,7 @@
 ---
 name: my-preferences
 description: Personal default behavior for every Claude Code session — language (Italian), end-of-turn recap discipline, subagent-first mindset, root-cause-first debugging. Use this skill at the start of every session and refer back to it whenever uncertain about output style, recap format, or when to delegate to subagents.
+user-invocable: false
 ---
 
 # My Preferences

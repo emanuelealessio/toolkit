@@ -1,6 +1,7 @@
 ---
 name: workflow-execute
 description: Execute an approved plan step-by-step, updating STATE.md after each step and logging non-trivial decisions in DECISIONS.md. Use after workflow-plan has produced a PLAN.md and the user has approved it, or when the user says "esegui il piano", "implement the plan", "vai avanti col piano".
+allowed-tools: Read, Edit, Write, Grep, Glob, Bash(git status:*), Bash(git diff:*), Bash(git log:*)
 ---
 
 # Workflow Execute

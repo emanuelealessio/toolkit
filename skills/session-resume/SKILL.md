@@ -1,6 +1,8 @@
 ---
 name: session-resume
 description: Resume work on a project by reading HANDOFF.md and STATE.md from the per-project state directory and summarizing where we left off, what was pending, and what the next step is. Use at the start of a session when the user says "riprendiamo", "resume", "dov'eravamo", "continua il lavoro su X", or when returning to a project after a break.
+argument-hint: "[project-slug]"
+allowed-tools: Read, Bash(git status:*), Bash(git log:*), Bash(git branch:*), Bash(git remote:*), Bash(git rev-parse:*)
 ---
 
 # Session Resume

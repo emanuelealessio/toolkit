@@ -1,6 +1,8 @@
 ---
 name: git-pr
 description: Draft pull request title, body, and test plan in DRAFT MODE — show the draft and stop. Does not auto-push, does not auto-create. The user manually runs `gh pr create` (or via mcp__github__create_pull_request) when ready. Use when the user says "PR", "fai una PR", "draft una PR".
+disable-model-invocation: true
+allowed-tools: Read, Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*)
 ---
 
 # Git PR (draft mode)

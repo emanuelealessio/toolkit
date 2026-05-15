@@ -1,6 +1,8 @@
 ---
 name: session-handoff
 description: Snapshot the current session state into HANDOFF.md so the next session can resume cleanly. Use when the user says "chiudiamo", "stop", "ci risentiamo domani", at the end of a long session, or when context is getting heavy and you need to checkpoint progress.
+disable-model-invocation: true
+allowed-tools: Read, Write, Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git remote:*), Bash(git rev-parse:*)
 ---
 
 # Session Handoff

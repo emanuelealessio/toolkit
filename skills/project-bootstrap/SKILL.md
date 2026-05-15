@@ -1,6 +1,8 @@
 ---
 name: project-bootstrap
 description: Initialize a new project's state in ~/.claude/state/projects/<slug>/ by detecting language/stack and seeding PROJECT.md and STATE.md from templates. Use on empty or near-empty repos, when the user says "nuovo progetto", "setup", "bootstrap", or when other workflow skills find no per-project state.
+disable-model-invocation: true
+allowed-tools: Read, Write, Glob, Bash(ls:*), Bash(git status:*), Bash(git log:*), Bash(git remote:*), Bash(git rev-parse:*)
 ---
 
 # Project Bootstrap

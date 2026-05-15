@@ -1,6 +1,7 @@
 ---
 name: workflow-plan
 description: Produce a structured numbered plan for non-trivial multi-step tasks. Use when the user asks to "piano", "plan this", "fai un piano", or before starting any task that touches more than 2-3 files or requires coordinated changes. Maps the codebase via the code-explorer subagent to keep main context light, then writes PLAN.md in the per-project state directory.
+argument-hint: <task description>
 ---
 
 # Workflow Plan

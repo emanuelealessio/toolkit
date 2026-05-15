@@ -1,6 +1,8 @@
 ---
 name: git-commit
 description: Draft a conventional-commit message and create a NEW commit (never amend unless explicitly asked, never use `git add -A`). Use when the user says "commit", "fai un commit", or staging is ready and they want a message. Reads recent DECISIONS.md for context on non-trivial changes.
+disable-model-invocation: true
+allowed-tools: Read, Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git add:*), Bash(git commit:*)
 ---
 
 # Git Commit

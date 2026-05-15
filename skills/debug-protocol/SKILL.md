@@ -1,6 +1,7 @@
 ---
 name: debug-protocol
 description: Structured debugging output for bugs, errors, stack traces, or unexpected behavior. Enforces the format Symptom → Root cause → Fix → Why this approach. Use whenever the user reports a bug or an error appears, instead of patching symptoms. Logs non-trivial fixes to DECISIONS.md.
+allowed-tools: Read, Grep, Glob, Edit, Write
 ---
 
 # Debug Protocol
