@@ -18,7 +18,7 @@ After install, `git pull` in `~/toolkit` propagates updates instantly — skills
 
 ## What it gives you
 
-- **12 personal skills** in `~/.claude/skills/` (symlinked from this repo)
+- **14 personal skills** in `~/.claude/skills/` (symlinked from this repo)
 - **6 subagents** in `~/.claude/agents/` (symlinked)
 - **2 safety hooks** in `~/.claude/hooks/` (warn-only, see below)
 - **Anthropic's official skills** (`anthropics/skills`) auto-cloned to `~/.claude/external/` and symlinked alongside — document handling (PDF, DOCX, XLSX, PPTX), Skill Creator and other reference skills come bundled
@@ -46,6 +46,12 @@ Existing skills (e.g. `session-start-hook`) and hook entries in `settings.json` 
 | `tdd-loop` | New functionality with clear I/O — Red → Green → Refactor. |
 | `code-review` | Before commit on non-trivial diff — reuse, simplicity, security, dead code. |
 | `verify-before-done` | Before declaring a task complete — checklist of tests/behavior/regressions/pulizia. |
+
+### Learning loop (per-project knowledge)
+| Skill | Use it when |
+|---|---|
+| `learn-codebase` | Arriving cold on a repo or after `project-bootstrap` — captures conventions, stack, real commands, gotchas into `PATTERNS.md`. Re-runnable for refresh. |
+| `retro` | End of a non-trivial task or when a gotcha/anti-pattern emerged — appends a generalizable lesson to `LESSONS.md` (append-only). `session-resume` rereads both next time. |
 
 ### Git
 | Skill | Use it when |
@@ -112,11 +118,13 @@ To prune the external clone entirely: `./uninstall.sh --purge-external`.
 ~/.claude/state/
 ├── identity.md                  # global preferences (lingua, recap, mindset)
 └── projects/<slug>/             # per-project artifacts, slug from git remote or cwd
-    ├── PROJECT.md
-    ├── STATE.md
-    ├── PLAN.md
-    ├── DECISIONS.md
-    └── HANDOFF.md
+    ├── PROJECT.md               # what is this project (stack, goal, conventions)
+    ├── STATE.md                 # current task + session history
+    ├── PLAN.md                  # active plan (from workflow-plan)
+    ├── PATTERNS.md              # structural snapshot (from learn-codebase)
+    ├── LESSONS.md               # append-only runtime lessons (from retro)
+    ├── DECISIONS.md             # architectural choices log
+    └── HANDOFF.md               # session snapshot for next resume
 ```
 
 Everything lives outside your project repos. Nothing pollutes the codebases you work on.
@@ -130,7 +138,7 @@ toolkit/
 ├── install.sh / uninstall.sh
 ├── lib/merge-settings.py
 ├── settings/settings.fragment.json
-├── skills/<name>/SKILL.md       # one dir per skill (12 total)
+├── skills/<name>/SKILL.md       # one dir per skill (14 total)
 ├── agents/<name>.md             # one file per subagent (6 total)
 ├── hooks/<name>.sh              # warn-only safety hooks
 ├── output-styles/<name>.md      # system-prompt level styles

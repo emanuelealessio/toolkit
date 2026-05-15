@@ -69,6 +69,11 @@ Se qualcosa **non** è stato verificato (es. UI in CLI environment):
 
 Onestà > apparenza di completezza.
 
+### 7. Lesson learned (opzionale, solo se task non triviale)
+- È emerso un gotcha non documentato, un anti-pattern di questo progetto, un requisito di setup nascosto?
+- Se sì: dopo aver chiuso, suggerisci all'utente di lanciare `retro` per appenderlo a `LESSONS.md`. Una sola lesson per task — niente spam.
+- Se no: skip silenziosamente, niente "non c'era nulla da imparare" performativo.
+
 ## Anti-pattern
 
 - "Dovrebbe funzionare" senza averlo runnato.

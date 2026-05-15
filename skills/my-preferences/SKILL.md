@@ -73,6 +73,15 @@ Quando si presenta un errore / bug / "non funziona":
 - **Prima di `git-commit` su diff non triviali** (>50 righe o >3 file): usa `code-review` per spot reuse/security/dead code.
 - **Per nuove funzionalità con I/O definito o per bug fix che merita un test di regressione**: considera `tdd-loop` (Red → Green → Refactor).
 
+## 4c. Loop di apprendimento per-progetto
+
+Il toolkit ha due skill di "knowledge capture" che insieme chiudono il flywheel cross-sessione:
+
+- **`learn-codebase`**: cattura **strutturale** (convenzioni, stack, comandi, gotcha noti del repo) in `PATTERNS.md`. Lanciala dopo `project-bootstrap` o quando arrivi cold su un repo.
+- **`retro`**: cattura **runtime** (lesson learned da un task concreto) in `LESSONS.md` append-only. Lanciala dopo task non triviali quando emerge un gotcha o anti-pattern del progetto.
+
+`session-resume` rilegge entrambi all'inizio di ogni sessione → tu (Claude Code) non ricominci mai da zero su un progetto già visto.
+
 ## 5. Azioni distruttive / visibili
 
 Conferma esplicitamente prima di:

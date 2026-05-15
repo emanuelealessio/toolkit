@@ -88,7 +88,7 @@ Suggerimenti opzionali:
 - <es. .gitignore Python> — vuoi che lo crei?
 - <es. README iniziale> — uso doc-writer?
 
-Prossimo step: `workflow-plan` per pianificare la prima feature, oppure inizia a lavorare e usa `session-handoff` quando ti fermi.
+Prossimo step suggerito: **`learn-codebase`** per catturare convenzioni e comandi del repo in PATTERNS.md (rende efficaci tutte le sessioni future). Dopo: `workflow-plan` per pianificare la prima feature.
 ```
 
 ## Artefatti

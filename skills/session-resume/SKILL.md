@@ -32,11 +32,13 @@ Se l'utente menziona esplicitamente un progetto diverso (es. "riprendiamo X"), u
 1. `$state_dir/HANDOFF.md` — il più rilevante: snapshot dell'ultima sessione.
 2. `$state_dir/STATE.md` > sezione `Now`.
 3. `$state_dir/PLAN.md` — step `[ ]` non completati.
-4. `$state_dir/PROJECT.md` — solo se non hai context sul progetto.
-5. `$state_dir/DECISIONS.md` — ultime 2-3 sezioni datate.
+4. `$state_dir/PATTERNS.md` — snapshot strutturale del progetto (da `learn-codebase`). Se presente, leggilo: è una scorciatoia per evitare di riscoprire convenzioni e comandi.
+5. `$state_dir/LESSONS.md` — **ultime 3-5 sezioni datate**. Lesson trasversali emerse lavorando qui (gotcha, anti-pattern, requisiti non documentati). Applicale come constraint impliciti del lavoro che stai per fare.
+6. `$state_dir/PROJECT.md` — solo se non hai context sul progetto.
+7. `$state_dir/DECISIONS.md` — ultime 2-3 sezioni datate.
 
 Se `$state_dir` non esiste o è vuoto:
-> Non trovo stato salvato per `<slug>`. Vuoi che lanci `project-bootstrap` per inizializzarlo?
+> Non trovo stato salvato per `<slug>`. Vuoi che lanci `project-bootstrap` per inizializzarlo (poi `learn-codebase` per catturare le convenzioni)?
 
 ### 3. Verifica stato git
 
@@ -59,6 +61,9 @@ Dove eravamo: <1-2 frasi da HANDOFF.md > Task corrente>
 
 Stato git: <branch> · <modifiche / pulito> · <push pending o no>
 
+Lessons attive (da LESSONS.md, ultime rilevanti):
+- <una riga per lesson, max 3>
+
 Prossimo step (da HANDOFF.md):
 1. <step>
 2. <step>
@@ -69,13 +74,15 @@ Prossimo step (da HANDOFF.md):
 Procedo con (1)?
 ```
 
+Se PATTERNS.md esiste, NON dumparlo nel resume — è già nel context una volta letto, e il main agent lo userà silentemente durante il lavoro. Cita solo se rilevante a una decisione immediata.
+
 ### 5. Attendi conferma
 
 **Non** iniziare a eseguire automaticamente. L'utente deve confermare il prossimo step (o redirigere).
 
 ## Artefatti
 
-- **Legge**: `HANDOFF.md`, `STATE.md`, `PLAN.md`, `PROJECT.md`, `DECISIONS.md` (solo recenti)
+- **Legge**: `HANDOFF.md`, `STATE.md`, `PLAN.md`, `PATTERNS.md`, `LESSONS.md` (ultime 3-5), `PROJECT.md`, `DECISIONS.md` (recenti)
 - **Scrive**: niente (lettura pura)
 
 ## Note
