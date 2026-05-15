@@ -11,6 +11,9 @@ STATE_DIR="$CLAUDE_HOME/state"
 BACKUPS_DIR="$CLAUDE_HOME/backups"
 SETTINGS="$CLAUDE_HOME/settings.json"
 FRAGMENT="$REPO/settings/settings.fragment.json"
+EXTERNAL_DIR="$CLAUDE_HOME/external"
+ANTHROPIC_DIR="$EXTERNAL_DIR/anthropics-skills"
+ANTHROPIC_REPO="https://github.com/anthropics/skills.git"
 
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -78,6 +81,51 @@ install_agents() {
   done
 }
 
+install_anthropic_skills() {
+  # Clone (or update) anthropics/skills and symlink every SKILL.md dir into ~/.claude/skills.
+  # Conflicts (existing local skill with same name) are skipped with a warning.
+  mkdir -p "$EXTERNAL_DIR"
+  if [ -d "$ANTHROPIC_DIR/.git" ]; then
+    info "aggiornamento anthropics/skills..."
+    if ! git -C "$ANTHROPIC_DIR" pull --ff-only --quiet 2>/dev/null; then
+      warn "git pull di anthropics/skills fallito (offline?), uso la versione locale"
+    fi
+  else
+    info "clone anthropics/skills (--depth 1)..."
+    if ! git clone --depth 1 --quiet "$ANTHROPIC_REPO" "$ANTHROPIC_DIR" 2>/dev/null; then
+      warn "clone di anthropics/skills fallito, skip integrazione"
+      return 0
+    fi
+  fi
+
+  mkdir -p "$SKILLS_DIR"
+  local linked=0 skipped=0
+  while IFS= read -r skill_md; do
+    local skill_dir name dst
+    skill_dir="$(dirname "$skill_md")"
+    name="$(basename "$skill_dir")"
+    dst="$SKILLS_DIR/$name"
+
+    if [ -L "$dst" ]; then
+      local current
+      current="$(readlink "$dst")"
+      if [ "$current" = "$skill_dir" ]; then continue; fi
+      warn "skip anthropic skill '$name' (symlink esistente a $current)"
+      skipped=$((skipped+1))
+      continue
+    elif [ -e "$dst" ]; then
+      warn "skip anthropic skill '$name' (path esistente non-symlink)"
+      skipped=$((skipped+1))
+      continue
+    fi
+
+    ln -s "$skill_dir" "$dst"
+    linked=$((linked+1))
+  done < <(find "$ANTHROPIC_DIR" -type f -name "SKILL.md" 2>/dev/null)
+
+  info "anthropic skills: $linked linkate, $skipped saltate"
+}
+
 merge_settings() {
   mkdir -p "$CLAUDE_HOME"
   if [ ! -f "$FRAGMENT" ]; then
@@ -129,6 +177,15 @@ verify() {
   fi
   [ -d "$STATE_DIR" ] && printf "  ${GREEN}OK${NC}  state dir\n" || { printf "  ${RED}KO${NC}  state dir mancante\n"; errors=$((errors+1)); }
   [ -f "$STATE_DIR/identity.md" ] && printf "  ${GREEN}OK${NC}  identity.md\n" || printf "  ${YELLOW}--${NC}  identity.md non presente (template assente?)\n"
+  if [ -d "$ANTHROPIC_DIR/.git" ]; then
+    local anthropic_count
+    anthropic_count=$(find "$SKILLS_DIR" -maxdepth 1 -type l 2>/dev/null | while read -r l; do
+      case "$(readlink "$l")" in "$ANTHROPIC_DIR/"*) echo 1 ;; esac
+    done | wc -l | tr -d ' ')
+    printf "  ${GREEN}OK${NC}  anthropic skills attive: %s\n" "$anthropic_count"
+  else
+    printf "  ${YELLOW}--${NC}  anthropic skills non installate\n"
+  fi
   printf "\n"
   [ $errors -eq 0 ] || fail "$errors verifiche fallite"
   info "tutto verde"
@@ -143,6 +200,7 @@ main() {
   backup_once
   install_skills
   install_agents
+  install_anthropic_skills
   merge_settings
   scaffold_state
   verify

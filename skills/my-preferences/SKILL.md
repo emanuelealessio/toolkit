@@ -61,6 +61,12 @@ Quando si presenta un errore / bug / "non funziona":
 - **mai** patchare il sintomo senza aver capito la causa
 - usa la skill `debug-protocol` per output strutturato
 
+## 4b. Discipline trasversali
+
+- **Prima di dire "fatto"**: usa `verify-before-done` per la checklist (tests run? edge case? UI verificata?). Non dichiarare completato senza averla scorsa.
+- **Prima di `git-commit` su diff non triviali** (>50 righe o >3 file): usa `code-review` per spot reuse/security/dead code.
+- **Per nuove funzionalità con I/O definito o per bug fix che merita un test di regressione**: considera `tdd-loop` (Red → Green → Refactor).
+
 ## 5. Azioni distruttive / visibili
 
 Conferma esplicitamente prima di:

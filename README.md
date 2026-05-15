@@ -18,15 +18,17 @@ After install, `git pull` in `~/toolkit` propagates updates instantly — skills
 
 ## What it gives you
 
-- **9 skills** in `~/.claude/skills/` (symlinked)
+- **12 personal skills** in `~/.claude/skills/` (symlinked from this repo)
 - **3 subagents** in `~/.claude/agents/` (symlinked)
+- **Anthropic's official skills** (`anthropics/skills`) auto-cloned to `~/.claude/external/` and symlinked alongside — document handling (PDF, DOCX, XLSX, PPTX), Skill Creator and other reference skills come bundled
 - A merged `~/.claude/settings.json` with read-only git/rg/ls permissions pre-allowed
 - A scaffolded `~/.claude/state/` for cross-session memory
 
-Existing skills (e.g. `session-start-hook`) and hook entries in `settings.json` are preserved — the installer never overwrites silently.
+Existing skills (e.g. `session-start-hook`) and hook entries in `settings.json` are preserved — the installer never overwrites silently. If an anthropic skill name collides with a local one, the local one wins.
 
-## Skills
+## Personal skills
 
+### Workflow & state
 | Skill | Use it when |
 |---|---|
 | `my-preferences` | Auto-discovered. Sets language, recap rules, subagent mindset. |
@@ -34,10 +36,27 @@ Existing skills (e.g. `session-start-hook`) and hook entries in `settings.json` 
 | `workflow-execute` | Execute an approved plan step-by-step, log decisions. |
 | `session-resume` | Resuming work on a project — reads `STATE.md` + `HANDOFF.md`. |
 | `session-handoff` | Closing a long session — snapshot state for next time. |
+| `project-bootstrap` | New repo — scaffold project state and templates. |
+
+### Quality & discipline
+| Skill | Use it when |
+|---|---|
 | `debug-protocol` | Bug, error, stack trace — Symptom → Root cause → Fix → Why. |
+| `tdd-loop` | New functionality with clear I/O — Red → Green → Refactor. |
+| `code-review` | Before commit on non-trivial diff — reuse, simplicity, security, dead code. |
+| `verify-before-done` | Before declaring a task complete — checklist of tests/behavior/regressions/pulizia. |
+
+### Git
+| Skill | Use it when |
+|---|---|
 | `git-commit` | Stage is ready — drafts conventional-commit message. |
 | `git-pr` | Branch is ready — drafts PR title/body/test-plan (no auto-push). |
-| `project-bootstrap` | New repo — scaffold project state and templates. |
+
+## Bundled external skills
+
+The installer automatically clones [`anthropics/skills`](https://github.com/anthropics/skills) (shallow) into `~/.claude/external/anthropics-skills/` and symlinks each contained skill (any directory with a `SKILL.md`) into `~/.claude/skills/`. Re-running `./install.sh` does a `git pull --ff-only` to keep them current. Names that collide with local skills are skipped (local wins, with a warning).
+
+To prune the external clone entirely: `./uninstall.sh --purge-external`.
 
 ## Subagents
 
@@ -71,9 +90,21 @@ toolkit/
 ├── install.sh / uninstall.sh
 ├── lib/merge-settings.py
 ├── settings/settings.fragment.json
-├── skills/<name>/SKILL.md       # one dir per skill
+├── skills/<name>/SKILL.md       # one dir per skill (12 total)
 ├── agents/<name>.md             # one file per subagent
 └── templates/                   # seeds copied by project-bootstrap
+```
+
+After install, `~/.claude/` looks like:
+
+```
+~/.claude/
+├── skills/                       # symlinks (local + anthropic)
+├── agents/                       # symlinks
+├── external/anthropics-skills/   # git clone, updated on each install.sh
+├── state/                        # your cross-session memory (untouched on uninstall)
+├── settings.json                 # deep-merged from this repo's fragment
+└── backups/                      # first-install backup of settings.json
 ```
 
 ## Requirements
@@ -85,7 +116,8 @@ toolkit/
 ## Uninstall
 
 ```bash
-~/toolkit/uninstall.sh
+~/toolkit/uninstall.sh                  # removes symlinks, restores settings.json backup
+~/toolkit/uninstall.sh --purge-external # also removes ~/.claude/external/anthropics-skills/
 ```
 
-Removes only symlinks pointing into the toolkit. Restores `settings.json` from the most recent backup at `~/.claude/backups/pre-toolkit-*`. `~/.claude/state/` is preserved.
+Removes only symlinks pointing into the toolkit or into the anthropic clone. Restores `settings.json` from the most recent backup at `~/.claude/backups/pre-toolkit-*`. `~/.claude/state/` is always preserved.

@@ -9,6 +9,9 @@ SKILLS_DIR="$CLAUDE_HOME/skills"
 AGENTS_DIR="$CLAUDE_HOME/agents"
 BACKUPS_DIR="$CLAUDE_HOME/backups"
 SETTINGS="$CLAUDE_HOME/settings.json"
+EXTERNAL_DIR="$CLAUDE_HOME/external"
+ANTHROPIC_DIR="$EXTERNAL_DIR/anthropics-skills"
+PURGE_EXTERNAL=0
 
 GREEN='\033[0;32m'; YELLOW='\033[0;33m'; NC='\033[0m'
 info() { printf "${GREEN}[uninstall]${NC} %s\n" "$*"; }
@@ -30,6 +33,27 @@ unlink_if_ours() {
   done
 }
 
+unlink_anthropic() {
+  [ -d "$SKILLS_DIR" ] || return 0
+  for entry in "$SKILLS_DIR"/*; do
+    [ -L "$entry" ] || continue
+    local target
+    target="$(readlink "$entry")"
+    case "$target" in
+      "$ANTHROPIC_DIR/"*)
+        rm "$entry"
+        info "rimosso symlink anthropic: $entry"
+        ;;
+    esac
+  done
+  if [ "$PURGE_EXTERNAL" = "1" ] && [ -d "$ANTHROPIC_DIR" ]; then
+    rm -rf "$ANTHROPIC_DIR"
+    info "rimosso clone $ANTHROPIC_DIR"
+    # rmdir external/ only if empty
+    rmdir "$EXTERNAL_DIR" 2>/dev/null || true
+  fi
+}
+
 restore_settings() {
   local latest
   latest="$(ls -1dt "$BACKUPS_DIR"/pre-toolkit-* 2>/dev/null | head -n1 || true)"
@@ -42,8 +66,14 @@ restore_settings() {
 }
 
 main() {
+  for arg in "$@"; do
+    case "$arg" in
+      --purge-external) PURGE_EXTERNAL=1 ;;
+    esac
+  done
   unlink_if_ours "$SKILLS_DIR" "skills"
   unlink_if_ours "$AGENTS_DIR" "agents"
+  unlink_anthropic
   restore_settings
   info "uninstall completato (state preservato in $CLAUDE_HOME/state)"
 }
