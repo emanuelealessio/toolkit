@@ -77,7 +77,7 @@ main() {
   unlink_if_ours "$AGENTS_DIR" "agents"
   unlink_if_ours "$HOOKS_DIR" "hooks"
   unlink_if_ours "$STYLES_DIR" "output-styles"
-  unlink_if_ours "$HOME/.local/bin" "bin"
+  unlink_if_ours "${TOOLKIT_LOCAL_BIN:-$HOME/.local/bin}" "bin"
   unlink_anthropic
   restore_settings
   info "uninstall completato (state preservato in $CLAUDE_HOME/state)"

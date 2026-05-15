@@ -9,11 +9,17 @@ set -euo pipefail
 
 PAYLOAD="$(cat)"
 
-# Extract the command. Prefer jq, fallback to python.
+# Extract the command. Prefer jq, fallback to python. Tolerate malformed JSON
+# (exit 0 silently — never block the tool call for a hook implementation bug).
 if command -v jq >/dev/null 2>&1; then
-  CMD="$(printf '%s' "$PAYLOAD" | jq -r '.tool_input.command // empty')"
+  CMD="$(printf '%s' "$PAYLOAD" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"
 else
-  CMD="$(printf '%s' "$PAYLOAD" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("tool_input",{}).get("command",""))' 2>/dev/null || true)"
+  CMD="$(printf '%s' "$PAYLOAD" | python3 -c 'import json,sys
+try:
+    d=json.load(sys.stdin)
+    print(d.get("tool_input",{}).get("command",""))
+except Exception:
+    pass' 2>/dev/null || true)"
 fi
 
 [ -z "$CMD" ] && exit 0

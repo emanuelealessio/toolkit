@@ -150,6 +150,14 @@ After install, `~/.claude/` looks like:
 └── backups/                      # first-install backup of settings.json
 ```
 
+## Tests
+
+```bash
+./tests/run.sh
+```
+
+First run shallow-clones `bats-core` into `tests/bats/` (gitignored). Suite covers `install.sh`, `uninstall.sh`, `lib/merge-settings.py`, and `hooks/safety-bash-guard.sh`. Uses an isolated `CLAUDE_HOME` (mktemp) and `TOOLKIT_LOCAL_BIN` so the host install is never touched. Anthropic clone is skipped (`CLAUDE_TOOLKIT_SKIP_ANTHROPIC=1`) for speed.
+
 ## Requirements
 
 - macOS or Linux (Windows requires WSL — native NTFS symlinks are unreliable)

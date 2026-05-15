@@ -108,8 +108,9 @@ install_output_styles() {
 
 install_bin() {
   # Symlink bin/tk into ~/.local/bin (created if missing). Print hint if not in PATH.
+  # TOOLKIT_LOCAL_BIN overrides the destination (used by tests to keep host clean).
   [ -d "$REPO/bin" ] || return 0
-  local local_bin="$HOME/.local/bin"
+  local local_bin="${TOOLKIT_LOCAL_BIN:-$HOME/.local/bin}"
   mkdir -p "$local_bin"
   for f in "$REPO"/bin/*; do
     [ -f "$f" ] && [ -x "$f" ] || continue
@@ -126,6 +127,11 @@ install_bin() {
 install_anthropic_skills() {
   # Clone (or update) anthropics/skills and symlink every SKILL.md dir into ~/.claude/skills.
   # Conflicts (existing local skill with same name) are skipped with a warning.
+  # Skip entirely if CLAUDE_TOOLKIT_SKIP_ANTHROPIC=1 (used by tests to avoid network).
+  if [ "${CLAUDE_TOOLKIT_SKIP_ANTHROPIC:-0}" = "1" ]; then
+    info "anthropics/skills: skipped (CLAUDE_TOOLKIT_SKIP_ANTHROPIC=1)"
+    return 0
+  fi
   mkdir -p "$EXTERNAL_DIR"
   if [ -d "$ANTHROPIC_DIR/.git" ]; then
     info "aggiornamento anthropics/skills..."
