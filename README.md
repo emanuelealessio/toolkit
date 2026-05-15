@@ -53,6 +53,12 @@ Existing skills (e.g. `session-start-hook`) and hook entries in `settings.json` 
 | `git-commit` | Stage is ready — drafts conventional-commit message. |
 | `git-pr` | Branch is ready — drafts PR title/body/test-plan (no auto-push). |
 
+## Output style
+
+`output-styles/italiano-conciso.md` is installed and set as default in `settings.json` (the deep-merge respects any pre-existing `outputStyle` you have — yours wins). The style codifies Italian-by-default replies, end-of-turn recap discipline, subagent-first mindset, and a no-fluff tone — system-prompt level, so it carries even when no skill is loaded.
+
+Switch styles any time with `/output-style` in Claude Code.
+
 ## Safety hooks
 
 Two warn-only hooks are wired into `settings.json`:
@@ -108,6 +114,7 @@ toolkit/
 ├── skills/<name>/SKILL.md       # one dir per skill (12 total)
 ├── agents/<name>.md             # one file per subagent (6 total)
 ├── hooks/<name>.sh              # warn-only safety hooks
+├── output-styles/<name>.md      # system-prompt level styles
 └── templates/                   # seeds copied by project-bootstrap
 ```
 

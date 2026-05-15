@@ -8,6 +8,7 @@ CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
 SKILLS_DIR="$CLAUDE_HOME/skills"
 AGENTS_DIR="$CLAUDE_HOME/agents"
 HOOKS_DIR="$CLAUDE_HOME/hooks"
+STYLES_DIR="$CLAUDE_HOME/output-styles"
 STATE_DIR="$CLAUDE_HOME/state"
 BACKUPS_DIR="$CLAUDE_HOME/backups"
 SETTINGS="$CLAUDE_HOME/settings.json"
@@ -91,6 +92,17 @@ install_hooks() {
     local name
     name="$(basename "$f")"
     link_dir "$REPO/hooks/$name" "$HOOKS_DIR/$name"
+  done
+}
+
+install_output_styles() {
+  [ -d "$REPO/output-styles" ] || return 0
+  mkdir -p "$STYLES_DIR"
+  for f in "$REPO"/output-styles/*.md; do
+    [ -f "$f" ] || continue
+    local name
+    name="$(basename "$f")"
+    link_dir "$REPO/output-styles/$name" "$STYLES_DIR/$name"
   done
 }
 
@@ -194,6 +206,17 @@ verify() {
       printf "  ${RED}KO${NC}  hook $name\n"; errors=$((errors+1))
     fi
   done
+  for f in "$REPO"/output-styles/*.md; do
+    [ -f "$f" ] || continue
+    local name dst
+    name="$(basename "$f")"
+    dst="$STYLES_DIR/$name"
+    if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$REPO/output-styles/$name" ]; then
+      printf "  ${GREEN}OK${NC}  output-style $name\n"
+    else
+      printf "  ${RED}KO${NC}  output-style $name\n"; errors=$((errors+1))
+    fi
+  done
   if python3 -c "import json,sys; json.load(open('$SETTINGS'))" 2>/dev/null; then
     printf "  ${GREEN}OK${NC}  settings.json parsabile\n"
   else
@@ -225,6 +248,7 @@ main() {
   install_skills
   install_agents
   install_hooks
+  install_output_styles
   install_anthropic_skills
   merge_settings
   scaffold_state

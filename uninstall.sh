@@ -8,6 +8,7 @@ CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
 SKILLS_DIR="$CLAUDE_HOME/skills"
 AGENTS_DIR="$CLAUDE_HOME/agents"
 HOOKS_DIR="$CLAUDE_HOME/hooks"
+STYLES_DIR="$CLAUDE_HOME/output-styles"
 BACKUPS_DIR="$CLAUDE_HOME/backups"
 SETTINGS="$CLAUDE_HOME/settings.json"
 EXTERNAL_DIR="$CLAUDE_HOME/external"
@@ -75,6 +76,7 @@ main() {
   unlink_if_ours "$SKILLS_DIR" "skills"
   unlink_if_ours "$AGENTS_DIR" "agents"
   unlink_if_ours "$HOOKS_DIR" "hooks"
+  unlink_if_ours "$STYLES_DIR" "output-styles"
   unlink_anthropic
   restore_settings
   info "uninstall completato (state preservato in $CLAUDE_HOME/state)"
