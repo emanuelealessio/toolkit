@@ -65,6 +65,9 @@ To prune the external clone entirely: `./uninstall.sh --purge-external`.
 | `code-explorer` | Read-only mapping of code relevant to a query. |
 | `test-runner` | Detect and run the project's test command. |
 | `doc-writer` | Draft README/doc sections from a spec. |
+| `security-scanner` | Audit a diff for OWASP/secrets/injection vulnerabilities (read-only). |
+| `pr-reviewer` | Independent second-opinion on a branch/PR diff — verdict approve/nits/changes (read-only). |
+| `dependency-mapper` | Impact analysis before refactor: who imports/calls X, where (read-only). |
 
 ## Shared state
 

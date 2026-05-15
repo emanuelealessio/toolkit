@@ -51,7 +51,13 @@ Delega a subagent quando:
 - task è di 1-2 step rapidi
 - richiede stato conversazione (subagent parte cold)
 
-Subagent disponibili in `~/.claude/agents/`: `code-explorer` (mapping), `test-runner` (test), `doc-writer` (docs).
+Subagent disponibili in `~/.claude/agents/`:
+- `code-explorer` — mapping read-only
+- `test-runner` — esecuzione test compatta
+- `doc-writer` — draft docs/README
+- `security-scanner` — audit security su diff (OWASP, secrets, injection)
+- `pr-reviewer` — second opinion indipendente su branch/PR
+- `dependency-mapper` — impact analysis prima di refactor
 
 Quando lanci subagent in parallelo per lavori indipendenti, mettili nello stesso messaggio.
 
