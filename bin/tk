@@ -1,0 +1,267 @@
+#!/usr/bin/env bash
+# tk — Personal Claude Code toolkit CLI.
+# Quick ops on ~/.claude/state without launching a Claude session.
+set -euo pipefail
+
+# Resolve toolkit repo from this script's location (follow symlinks).
+SELF="$(readlink -f "$0" 2>/dev/null || python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$0")"
+REPO="$(cd "$(dirname "$SELF")/.." && pwd)"
+CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
+STATE_DIR="$CLAUDE_HOME/state"
+PROJECTS_DIR="$STATE_DIR/projects"
+
+GREEN='\033[0;32m'; YELLOW='\033[0;33m'; RED='\033[0;31m'; BOLD='\033[1m'; NC='\033[0m'
+
+usage() {
+  cat <<EOF
+tk — toolkit CLI
+
+USAGE:
+  tk state list                    Lista progetti con stato
+  tk state show <slug>             Stampa PROJECT.md, STATE.md, HANDOFF.md
+  tk state search <query>          Ripgrep su tutti gli artefatti
+  tk state prune [--dry-run]       Rimuove state dir di progetti senza repo accessibile
+  tk doctor                        Diagnostica: symlink, settings, hooks, state
+  tk update                        git pull del toolkit + re-run install.sh
+  tk help                          Questo messaggio
+
+Toolkit: $REPO
+State:   $STATE_DIR
+EOF
+}
+
+# ---------- state list ----------
+cmd_state_list() {
+  [ -d "$PROJECTS_DIR" ] || { printf "Nessun progetto in %s\n" "$PROJECTS_DIR"; return 0; }
+  local count=0
+  printf "%-30s %-12s %-22s %s\n" "SLUG" "ARTIFACTS" "LAST UPDATE" "TASK"
+  printf "%-30s %-12s %-22s %s\n" "----" "---------" "-----------" "----"
+  for d in "$PROJECTS_DIR"/*/; do
+    [ -d "$d" ] || continue
+    local slug artifacts mtime task
+    slug="$(basename "$d")"
+    artifacts="$(find "$d" -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' ')"
+    mtime="$(find "$d" -maxdepth 1 -type f -name '*.md' -printf '%T@ %TY-%Tm-%Td %TH:%TM\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-3 || echo '-')"
+    [ -z "$mtime" ] && mtime="-"
+    task="-"
+    if [ -f "$d/STATE.md" ]; then
+      task="$(grep -m1 '^- Task:' "$d/STATE.md" 2>/dev/null | sed 's/^- Task: *//' | cut -c1-60 || echo '-')"
+    fi
+    printf "%-30s %-12s %-22s %s\n" "$slug" "$artifacts" "$mtime" "$task"
+    count=$((count+1))
+  done
+  printf "\n%d progetti totali\n" "$count"
+}
+
+# ---------- state show ----------
+cmd_state_show() {
+  local slug="${1:-}"
+  [ -z "$slug" ] && { printf "${RED}Errore:${NC} serve uno slug\n  tk state show <slug>\n"; return 2; }
+  local dir="$PROJECTS_DIR/$slug"
+  [ -d "$dir" ] || { printf "${RED}Errore:${NC} slug '%s' non trovato in %s\n" "$slug" "$PROJECTS_DIR"; return 2; }
+  for f in PROJECT.md STATE.md PLAN.md HANDOFF.md DECISIONS.md; do
+    if [ -f "$dir/$f" ]; then
+      printf "${BOLD}=== %s ===${NC}\n" "$f"
+      cat "$dir/$f"
+      printf "\n"
+    fi
+  done
+}
+
+# ---------- state search ----------
+cmd_state_search() {
+  local query="${1:-}"
+  [ -z "$query" ] && { printf "${RED}Errore:${NC} serve una query\n  tk state search <query>\n"; return 2; }
+  [ -d "$PROJECTS_DIR" ] || { printf "Nessun progetto.\n"; return 0; }
+  if command -v rg >/dev/null 2>&1; then
+    rg --color=always -i -n "$query" "$PROJECTS_DIR" || printf "Nessun match per '%s'\n" "$query"
+  else
+    grep -rin --color=always "$query" "$PROJECTS_DIR" || printf "Nessun match per '%s'\n" "$query"
+  fi
+}
+
+# ---------- state prune ----------
+cmd_state_prune() {
+  local dry=0
+  for arg in "$@"; do
+    case "$arg" in --dry-run|-n) dry=1 ;; esac
+  done
+  [ -d "$PROJECTS_DIR" ] || return 0
+
+  # Strategy: for each project slug, check if a matching repo exists under
+  # common parent dirs ($HOME, $HOME/projects, $HOME/code). If none, candidate.
+  # NOTE: this is best-effort — does not delete unless explicitly confirmed.
+  local candidates=()
+  for d in "$PROJECTS_DIR"/*/; do
+    [ -d "$d" ] || continue
+    local slug; slug="$(basename "$d")"
+    local found=0
+    for parent in "$HOME" "$HOME/projects" "$HOME/code" "$HOME/dev" "$HOME/src"; do
+      if [ -d "$parent/$slug/.git" ] || [ -d "$parent/$slug" ]; then
+        found=1; break
+      fi
+    done
+    [ $found -eq 0 ] && candidates+=("$slug")
+  done
+
+  if [ ${#candidates[@]} -eq 0 ]; then
+    printf "${GREEN}Nessuno state orfano rilevato.${NC}\n"
+    return 0
+  fi
+
+  printf "${YELLOW}Candidati orfani (nessun repo trovato in ~, ~/projects, ~/code, ~/dev, ~/src):${NC}\n"
+  for s in "${candidates[@]}"; do printf "  - %s\n" "$s"; done
+
+  if [ $dry -eq 1 ]; then
+    printf "\n${YELLOW}--dry-run: nessuna cancellazione.${NC}\n"
+    return 0
+  fi
+
+  printf "\nConfermi rimozione di %d state dir? [y/N] " "${#candidates[@]}"
+  read -r ans
+  case "$ans" in
+    y|Y|yes|Yes)
+      for s in "${candidates[@]}"; do
+        rm -rf "$PROJECTS_DIR/$s"
+        printf "${GREEN}rimosso${NC} %s\n" "$s"
+      done
+      ;;
+    *) printf "Annullato.\n" ;;
+  esac
+}
+
+# ---------- doctor ----------
+cmd_doctor() {
+  local errors=0 warnings=0
+
+  check() {
+    local label="$1" status="$2" detail="${3:-}"
+    case "$status" in
+      ok)   printf "  ${GREEN}OK${NC}    %s%s\n" "$label" "${detail:+ — $detail}" ;;
+      warn) printf "  ${YELLOW}WARN${NC}  %s%s\n" "$label" "${detail:+ — $detail}"; warnings=$((warnings+1)) ;;
+      ko)   printf "  ${RED}KO${NC}    %s%s\n" "$label" "${detail:+ — $detail}"; errors=$((errors+1)) ;;
+    esac
+  }
+
+  printf "${BOLD}Toolkit:${NC} %s\n" "$REPO"
+  printf "${BOLD}Claude home:${NC} %s\n\n" "$CLAUDE_HOME"
+
+  # Skills
+  for d in "$REPO"/skills/*/; do
+    [ -d "$d" ] || continue
+    local name dst; name="$(basename "$d")"; dst="$CLAUDE_HOME/skills/$name"
+    if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$REPO/skills/$name" ]; then
+      check "skill $name" ok
+    else
+      check "skill $name" ko "symlink mancante o sbagliato"
+    fi
+  done
+
+  # Agents
+  for f in "$REPO"/agents/*.md; do
+    [ -f "$f" ] || continue
+    local name dst; name="$(basename "$f")"; dst="$CLAUDE_HOME/agents/$name"
+    if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$REPO/agents/$name" ]; then
+      check "agent $name" ok
+    else
+      check "agent $name" ko "symlink mancante"
+    fi
+  done
+
+  # Hooks
+  for f in "$REPO"/hooks/*.sh; do
+    [ -f "$f" ] || continue
+    local name dst; name="$(basename "$f")"; dst="$CLAUDE_HOME/hooks/$name"
+    if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$REPO/hooks/$name" ]; then
+      [ -x "$REPO/hooks/$name" ] && check "hook $name" ok || check "hook $name" warn "non eseguibile"
+    else
+      check "hook $name" ko "symlink mancante"
+    fi
+  done
+
+  # Output styles
+  for f in "$REPO"/output-styles/*.md; do
+    [ -f "$f" ] || continue
+    local name dst; name="$(basename "$f")"; dst="$CLAUDE_HOME/output-styles/$name"
+    if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$REPO/output-styles/$name" ]; then
+      check "output-style $name" ok
+    else
+      check "output-style $name" ko "symlink mancante"
+    fi
+  done
+
+  # Settings
+  if python3 -c "import json; json.load(open('$CLAUDE_HOME/settings.json'))" 2>/dev/null; then
+    check "settings.json" ok
+  else
+    check "settings.json" ko "non parsabile o mancante"
+  fi
+
+  # State
+  [ -d "$STATE_DIR" ] && check "state dir" ok || check "state dir" ko "$STATE_DIR mancante"
+  [ -f "$STATE_DIR/identity.md" ] && check "identity.md" ok || check "identity.md" warn "non presente"
+
+  # Anthropic clone
+  if [ -d "$CLAUDE_HOME/external/anthropics-skills/.git" ]; then
+    local last_sync
+    last_sync="$(git -C "$CLAUDE_HOME/external/anthropics-skills" log -1 --format='%cr' 2>/dev/null || echo '?')"
+    check "anthropic clone" ok "ultimo commit $last_sync"
+  else
+    check "anthropic clone" warn "non presente (offline al primo install?)"
+  fi
+
+  # tk in PATH
+  if command -v tk >/dev/null 2>&1; then
+    check "tk in PATH" ok "$(command -v tk)"
+  else
+    check "tk in PATH" warn "non in PATH — aggiungi ~/.local/bin"
+  fi
+
+  printf "\n"
+  if [ $errors -eq 0 ] && [ $warnings -eq 0 ]; then
+    printf "${GREEN}Tutto verde.${NC}\n"
+    return 0
+  elif [ $errors -eq 0 ]; then
+    printf "${YELLOW}%d warning, 0 errori.${NC}\n" "$warnings"
+    return 0
+  else
+    printf "${RED}%d errori, %d warning. Esegui ./install.sh per ripristinare.${NC}\n" "$errors" "$warnings"
+    return 1
+  fi
+}
+
+# ---------- update ----------
+cmd_update() {
+  printf "Aggiorno toolkit in %s...\n" "$REPO"
+  if ! git -C "$REPO" pull --ff-only; then
+    printf "${RED}git pull fallito.${NC}\n"
+    return 1
+  fi
+  printf "\nRe-run install.sh per propagare cambiamenti e aggiornare anthropic clone...\n"
+  "$REPO/install.sh"
+}
+
+# ---------- dispatch ----------
+main() {
+  local cmd="${1:-help}"
+  shift || true
+  case "$cmd" in
+    state)
+      local sub="${1:-list}"
+      shift || true
+      case "$sub" in
+        list)   cmd_state_list "$@" ;;
+        show)   cmd_state_show "$@" ;;
+        search) cmd_state_search "$@" ;;
+        prune)  cmd_state_prune "$@" ;;
+        *) printf "${RED}Sottocomando state sconosciuto: %s${NC}\n" "$sub"; usage; return 2 ;;
+      esac
+      ;;
+    doctor) cmd_doctor "$@" ;;
+    update) cmd_update "$@" ;;
+    help|--help|-h) usage ;;
+    *) printf "${RED}Comando sconosciuto: %s${NC}\n\n" "$cmd"; usage; return 2 ;;
+  esac
+}
+
+main "$@"

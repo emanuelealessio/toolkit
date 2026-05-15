@@ -106,6 +106,23 @@ install_output_styles() {
   done
 }
 
+install_bin() {
+  # Symlink bin/tk into ~/.local/bin (created if missing). Print hint if not in PATH.
+  [ -d "$REPO/bin" ] || return 0
+  local local_bin="$HOME/.local/bin"
+  mkdir -p "$local_bin"
+  for f in "$REPO"/bin/*; do
+    [ -f "$f" ] && [ -x "$f" ] || continue
+    local name
+    name="$(basename "$f")"
+    link_dir "$REPO/bin/$name" "$local_bin/$name"
+  done
+  case ":$PATH:" in
+    *":$local_bin:"*) ;;
+    *) warn "$local_bin non è nel tuo PATH. Aggiungi: export PATH=\"\$HOME/.local/bin:\$PATH\"" ;;
+  esac
+}
+
 install_anthropic_skills() {
   # Clone (or update) anthropics/skills and symlink every SKILL.md dir into ~/.claude/skills.
   # Conflicts (existing local skill with same name) are skipped with a warning.
@@ -249,6 +266,7 @@ main() {
   install_agents
   install_hooks
   install_output_styles
+  install_bin
   install_anthropic_skills
   merge_settings
   scaffold_state

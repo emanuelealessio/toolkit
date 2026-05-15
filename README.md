@@ -53,6 +53,25 @@ Existing skills (e.g. `session-start-hook`) and hook entries in `settings.json` 
 | `git-commit` | Stage is ready — drafts conventional-commit message. |
 | `git-pr` | Branch is ready — drafts PR title/body/test-plan (no auto-push). |
 
+## CLI `tk`
+
+After install, the `tk` command is available in `~/.local/bin/tk`. Quick ops on `~/.claude/state/` without launching a Claude session.
+
+```bash
+tk state list                    # progetti con stato, last update, task corrente
+tk state show <slug>             # PROJECT.md + STATE.md + HANDOFF.md di un progetto
+tk state search "<query>"        # ripgrep su tutti gli artefatti
+tk state prune [--dry-run]       # rimuove state dir di progetti senza repo accessibile
+tk doctor                        # diagnostica: skill/agent/hook/style symlinks + settings + anthropic clone
+tk update                        # git pull del toolkit + re-run install.sh
+```
+
+If `~/.local/bin` is not in your `PATH`, the installer prints a hint. Add:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
 ## Output style
 
 `output-styles/italiano-conciso.md` is installed and set as default in `settings.json` (the deep-merge respects any pre-existing `outputStyle` you have — yours wins). The style codifies Italian-by-default replies, end-of-turn recap discipline, subagent-first mindset, and a no-fluff tone — system-prompt level, so it carries even when no skill is loaded.
@@ -115,6 +134,7 @@ toolkit/
 ├── agents/<name>.md             # one file per subagent (6 total)
 ├── hooks/<name>.sh              # warn-only safety hooks
 ├── output-styles/<name>.md      # system-prompt level styles
+├── bin/tk                       # CLI for state ops + doctor + update
 └── templates/                   # seeds copied by project-bootstrap
 ```
 
